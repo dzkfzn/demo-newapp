@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+// eslint-disable-next-line import/no-cycle
 import { createShortener } from '@/actions/shortener';
 import { z } from 'zod';
 
