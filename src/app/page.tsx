@@ -1,100 +1,140 @@
-import Image from "next/image";
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import { createShortener } from '@/actions/shortener';
+import { z } from 'zod';
+
+const shortenerSchema = z.object({
+  originalURL: z.string().url('Please enter a valid URL'),
+  short: z
+    .string()
+    .regex(
+      /^[a-zA-Z0-9]*$/, // Updated to allow empty strings as well
+      'Shortened must be alphanumeric and contain no spaces'
+    )
+    .optional(),
+});
+
+export type ShortenerFormData = z.infer<typeof shortenerSchema>;
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [shortenSuccess, setShortenSuccess] = useState(false);
+  const [data, setData] = useState<any>({});
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ShortenerFormData>({
+    resolver: zodResolver(shortenerSchema),
+  });
+
+  const onSubmit = async (formData: ShortenerFormData) => {
+    console.log('=>(page.tsx:33) formData', formData);
+
+    try {
+      const result = await createShortener(formData);
+      console.log('=>(page.tsx:38) result', result);
+      setShortenSuccess(true);
+      setData(result);
+      reset();
+    } catch (error) {
+      console.error('Failed to create short URL', error);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      {/* Big Title */}
+      <header className="mt-10 text-center">
+        <h1 className="text-5xl font-bold text-blue-600">URL Shortener</h1>{' '}
+        {/* Increased font size */}
+      </header>
+
+      <main className="mx-auto mt-10 max-w-full flex-grow">
+        <form onSubmit={handleSubmit(onSubmit)} className="w-96 space-y-6">
+          {/* Original URL Input */}
+          <div>
+            <label
+              htmlFor="originalURL"
+              className="text-white-700 block text-lg font-medium" // Increased font size
+            >
+              Original URL
+            </label>
+            <input
+              type="text"
+              id="originalURL"
+              {...register('originalURL')}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-5 py-4 text-lg text-black shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-lg" // Increased padding and text size
+              placeholder="https://example.com"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {errors.originalURL && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors.originalURL.message}
+              </p>
+            )}
+          </div>
+
+          {/* Short URL Input */}
+          <div>
+            <label
+              htmlFor="short"
+              className="text-white-700 block text-lg font-medium" // Increased font size
+            >
+              Shortened
+            </label>
+            <input
+              type="text"
+              id="short"
+              {...register('short')}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-5 py-4 text-lg text-black shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-lg" // Increased padding and text size
+              placeholder="Leave it empty if you want it generated"
+            />
+            {errors.short && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors.short.message}
+              </p>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full rounded-md bg-blue-600 px-6 py-3 text-lg text-white hover:bg-blue-700" // Increased padding and text size
           >
-            Read our docs
-          </a>
-        </div>
+            Create Short URL
+          </button>
+        </form>
+
+        {/* Success Message */}
+        {shortenSuccess && (
+          <div className="mt-6">
+            <p className="text-green-600">Short URL created successfully!</p>
+            <p>
+              <span className="font-semibold">Original URL:</span>{' '}
+              {data.original}
+            </p>
+            <p>
+              <span className="font-semibold">Short URL:</span>{' '}
+              <a
+                href={`${process.env.NEXT_PUBLIC_DOMAIN}${data.short}`}
+                className="text-blue-600"
+              >
+                {`${process.env.NEXT_PUBLIC_DOMAIN}${data.short}`}
+              </a>
+            </p>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="mt-10 bg-gray-800 py-4">
+        <p className="text-center text-white">
+          &copy; {new Date().getFullYear()} URL Shortener. All rights reserved.
+        </p>
       </footer>
     </div>
   );
