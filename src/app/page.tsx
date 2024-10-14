@@ -132,10 +132,12 @@ export default function Home() {
       </main>
 
       {/* Footer */}
+      {/* Footer */}
       <footer className="mt-10 bg-gray-800 py-4">
         <p className="text-center text-white">
           &copy; {new Date().getFullYear()} URL Shortener. All rights reserved.
         </p>
+        <p className="mt-2 text-center text-white">Created by Dzaki</p>
       </footer>
     </div>
   );
